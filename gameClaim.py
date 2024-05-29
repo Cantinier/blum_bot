@@ -30,6 +30,5 @@ def game_claim(gameId):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
-
-    print(gameId + ' ' + response.text)
+    return response.text
 

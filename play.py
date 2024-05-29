@@ -26,4 +26,5 @@ def play():
 
     response = requests.request("POST", url, headers=headers, data=payload)
     gameId = response.json()['gameId']
+    print(f'Стартую игру {gameId}')
     return gameId

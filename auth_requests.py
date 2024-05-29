@@ -5,9 +5,7 @@ auth_query = ""
 
 url = "https://gateway.blum.codes/v1/auth/provider/PROVIDER_TELEGRAM_MINI_APP"
 
-payload = json.dumps({
-    "query": f'{auth_query}'
-})
+payload = json.dumps({"query": auth_query})
 headers = {
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'ru,en;q=0.9,en-GB;q=0.8,en-US;q=0.7',
@@ -22,32 +20,31 @@ headers = {
     'sec-fetch-site': 'same-site',
 }
 
-
-def get_auth():
-    response = requests.post(url, headers=headers, data=payload)
+def get_auth(proxy=None):
+    response = requests.post(url, headers=headers, data=payload, proxies=proxy)
     return response.json()
 
+def read_token(proxy):
+    try:
+        with open("token", 'r', encoding='utf-8') as file:
+            token = file.read().strip()
+            if token:
+                return token
+            else:
+                return refresh_token(proxy)
+    except FileNotFoundError:
+        return refresh_token(proxy)
 
-def read_token():
-    with open("token", 'r', encoding='utf-8') as file:
-        token = file.read()
-        if len(token) > 0:
-            return token
-        else:
-            return refresh_token()
-
-
-def refresh_token():
-    auth = get_auth()
-    token = auth['token']['access']
-    with open('token', 'w', encoding='utf-8') as file:
-        file.write(token)
+def refresh_token(proxy):
+    auth = get_auth(proxy)
+    token = auth.get('token', {}).get('access')
+    if token:
+        with open('token', 'w', encoding='utf-8') as file:
+            file.write(token)
     return token
 
-
-def check_token(token):
+def check_token(token, proxy):
     url = "https://game-domain.blum.codes/api/v1/user/balance"
-    payload = {}
     headers = {
         'accept': 'application/json, text/plain, */*',
         'accept-language': 'ru,en;q=0.9,en-GB;q=0.8,en-US;q=0.7',
@@ -60,14 +57,16 @@ def check_token(token):
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-site',
     }
-
-    response = requests.request("GET", url, headers=headers, data=payload)
+    response = requests.get(url, headers=headers, proxies=proxy)
     return response
 
-
-def get_token():
-    token = read_token()
-    response = check_token(token)
+def get_token(proxy=None):
+    token = read_token(proxy)
+    response = check_token(token, proxy)
     if response.status_code == 401:
-        token = refresh_token()
+        token = refresh_token(proxy)
     return token
+
+def get_proxy(user):
+    pass
+
